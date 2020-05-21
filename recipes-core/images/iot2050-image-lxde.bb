@@ -12,4 +12,6 @@ require recipes-core/images/iot2050-image-example.bb
 
 DESCRIPTION = "IOT2050 LXDE Image"
 
+IMAGE_INSTALL += "pvrsrvkm-${KERNEL_NAME}"
+
 IMAGE_INSTALL += "lxde-touch"
