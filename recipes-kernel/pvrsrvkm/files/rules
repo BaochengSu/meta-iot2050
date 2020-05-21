@@ -1,0 +1,42 @@
+#!/usr/bin/make -f
+
+#
+# Copyright (c) Siemens AG, 2020
+#
+# Authors:
+#  Su Baocheng <baocheng.su@siemens.com>
+#
+# SPDX-License-Identifier: MIT
+
+export DEB_BUILD_OPTIONS=parallel=$(shell nproc)
+
+export CROSS_COMPILE=$(DEB_HOST_GNU_TYPE)-
+
+ifeq ($(DEB_HOST_GNU_CPU), arm)
+export ARCH=arm
+endif
+ifeq ($(DEB_HOST_GNU_CPU), aarch64)
+export ARCH=arm64
+endif
+ifneq (,$(findstring 86,$(DEB_HOST_GNU_CPU)))
+export ARCH=x86
+endif
+
+override_dh_auto_build:
+	$(MAKE) -C $(PWD)/eurasia_km/eurasiacon/build/linux2/omap_linux \
+		KERNEL_SRC=$(KDIR) \
+		KERNELDIR="$(KDIR)" \
+		TARGET_PRODUCT=ti654x \
+		WINDOW_SYSTEM=wayland \
+		KERNEL_PATH="$(KDIR)" \
+		LD="$(CROSS_COMPILE)ld.bfd" \
+		CC="$(CROSS_COMPILE)gcc -fuse-ld=bfd "\
+		AR="$(CROSS_COMPILE)ar" \
+		KBUILD_EXTRA_SYMBOLS=""
+
+override_dh_auto_install:
+	$(MAKE) -C $(KDIR) M=$(PWD)/eurasia_km/eurasiacon/binary_omap_linux_wayland_release/target_aarch64/kbuild \
+		INSTALL_MOD_PATH=$(PWD)/debian/$(PN) modules_install
+
+%:
+	CFLAGS= LDFLAGS= dh $@ --parallel
