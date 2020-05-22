@@ -12,6 +12,10 @@ require recipes-core/images/iot2050-image-example.bb
 
 DESCRIPTION = "IOT2050 LXDE Image"
 
+DEPENDS += "libdrm"
+
+IMAGE_PREINSTALL += "libdrm-omap1"
+
 IMAGE_INSTALL += "pvrsrvkm-${KERNEL_NAME}"
 
 IMAGE_INSTALL += "lxde-touch"
