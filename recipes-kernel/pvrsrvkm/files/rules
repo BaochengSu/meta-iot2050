@@ -27,7 +27,7 @@ override_dh_auto_build:
 		KERNEL_SRC=$(KDIR) \
 		KERNELDIR="$(KDIR)" \
 		TARGET_PRODUCT=ti654x \
-		WINDOW_SYSTEM=wayland \
+		WINDOW_SYSTEM=xorg \
 		KERNEL_PATH="$(KDIR)" \
 		LD="$(CROSS_COMPILE)ld.bfd" \
 		CC="$(CROSS_COMPILE)gcc -fuse-ld=bfd "\
@@ -35,7 +35,7 @@ override_dh_auto_build:
 		KBUILD_EXTRA_SYMBOLS=""
 
 override_dh_auto_install:
-	$(MAKE) -C $(KDIR) M=$(PWD)/eurasia_km/eurasiacon/binary_omap_linux_wayland_release/target_aarch64/kbuild \
+	$(MAKE) -C $(KDIR) M=$(PWD)/eurasia_km/eurasiacon/binary_omap_linux_xorg_release/target_aarch64/kbuild \
 		INSTALL_MOD_PATH=$(PWD)/debian/$(PN) modules_install
 
 %:

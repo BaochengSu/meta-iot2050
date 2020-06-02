@@ -12,9 +12,9 @@ require recipes-core/images/iot2050-image-example.bb
 
 DESCRIPTION = "IOT2050 LXDE Image"
 
-DEPENDS += "libdrm"
+DEPENDS += "libdrm ti-sgx-um"
 
-IMAGE_PREINSTALL += "libdrm-omap1"
+IMAGE_PREINSTALL += "libdrm-omap1 ti-sgx-um"
 
 IMAGE_INSTALL += "pvrsrvkm-${KERNEL_NAME}"
 

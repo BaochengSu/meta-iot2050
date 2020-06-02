@@ -1,0 +1,20 @@
+Source: ti-sgx-um
+Section: libs
+Priority: optional
+Standards-Version: 4.1.3
+Maintainer: Unknown maintainer <unknown@example.com>
+Build-Depends: debhelper (>= 10), libdrm-dev, udev, libwayland-client0, 
+  libwayland-cursor0, libwayland-egl1, libwayland-server0, wayland-protocols, 
+  libffi-dev, expat
+
+Package: ti-sgx-um
+Section: libs
+Architecture: arm64
+Depends: ${misc:Depends}, ${shlibs:Depends}, libdrm2, libdrm-omap1, udev,
+ libwayland-client0, libwayland-cursor0, libwayland-egl1, libwayland-server0,
+ wayland-protocols, libffi6, expat
+Provides: libegl1 (= 1.1.0), libgles1 (= 1.1.0), libgles2 (= 1.1.0), libgbm1 (= 18.3.6)
+Conflicts: libegl1, libgles1, libgles2, libgbm1
+Replaces: libegl1, libgles1, libgles2, libgbm1
+Description: TI AM654x SGX video card user mode driver
+

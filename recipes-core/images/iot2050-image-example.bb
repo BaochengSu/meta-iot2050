@@ -97,3 +97,7 @@ IMAGE_INSTALL += " \
                     node-red \
                     node-red-gpio \
                     "
+
+IMAGE_INSTALL += "pvrsrvkm-${KERNEL_NAME}  ti-sgx-um"
+DEPENDS += "libdrm"
+IMAGE_PREINSTALL += "libdrm-omap1"

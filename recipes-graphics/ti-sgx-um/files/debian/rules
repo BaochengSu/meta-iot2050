@@ -1,0 +1,29 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE=1
+
+ifeq ($(DEB_HOST_GNU_CPU),armv6l)
+  export MACHINE=arm
+endif
+ifeq ($(DEB_HOST_GNU_CPU),armv7l)
+  export MACHINE=arm
+endif
+ifeq ($(DEB_HOST_GNU_CPU),aarch64)
+  export MACHINE=arm64
+endif
+
+
+override_dh_auto_clean:
+	@echo "no need to clean"
+
+override_dh_auto_install:
+	dh_auto_install -- TARGET_PRODUCT="ti654x"
+
+override_dh_strip:
+	echo "skipping strip libs"
+
+override_dh_shlibdeps:
+	echo "skipping dh_shlibdeps"
+
+%:
+	dh $@
