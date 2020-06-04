@@ -1,0 +1,26 @@
+From e569b4c2ba14b0bb8585f035347ec3b2e6b6668b Mon Sep 17 00:00:00 2001
+From: Su Baocheng <baocheng.su@siemens.com>
+Date: Thu, 4 Jun 2020 15:14:55 +0800
+Subject: [PATCH] refact: change the libdir for debian buster distro
+
+Signed-off-by: Su Baocheng <baocheng.su@siemens.com>
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 649111a..a652178 100755
+--- a/Makefile
++++ b/Makefile
+@@ -6,7 +6,7 @@ prefix = /usr
+ etcdir = /etc
+ bindir = ${prefix}/bin
+ incdir = ${prefix}/include
+-libdir = ${prefix}/lib
++libdir = ${prefix}/lib/aarch64-linux-gnu
+ 
+ all:
+ 
+-- 
+2.25.1
+

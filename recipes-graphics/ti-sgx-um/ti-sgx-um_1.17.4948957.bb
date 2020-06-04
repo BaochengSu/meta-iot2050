@@ -9,7 +9,10 @@
 inherit dpkg
 
 SRC_URI += "git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git;branch=${SRC_BRANCH};rev=${SRC_REV} \
-    file://debian"
+    file://0001-refact-change-the-libdir-for-debian-buster-distro.patch \
+    file://0002-refact-add-header-to-rc.pvr-for-new-update.rc-comman.patch \
+    file://debian \
+    "
 
 SRC_BRANCH = "ti-img-sgx/thud/${PV}"
 SRC_REV = "87d7e5c1e4db1bab048939c9719059d549c1e8dd"
@@ -28,15 +31,6 @@ do_prepare_build() {
 #######
 
 # TODO: "update-rc.d -f rc.pvr defaults"
-# TODO: add header to rc.pvr:
-### BEGIN INIT INFO
-# Provides: pvr
-# Required-Start:    $local_fs $syslog $remote_fs dbus
-# Required-Stop:     $local_fs $syslog $remote_fs
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-# Short-Description: Start pvr daemons
-### END INIT INFO
 
 # This is the rc.pvr update-rc.d command copied from arago project, just for reference.
 #INITSCRIPT_NAME = "rc.pvr"

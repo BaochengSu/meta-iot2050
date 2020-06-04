@@ -1,0 +1,30 @@
+From 26f8d8c12fa5276ddd0e8706dc5954628538e145 Mon Sep 17 00:00:00 2001
+From: Su Baocheng <baocheng.su@siemens.com>
+Date: Thu, 4 Jun 2020 15:20:40 +0800
+Subject: [PATCH 2/2] refact: add header to rc.pvr for new update.rc command
+
+Signed-off-by: Su Baocheng <baocheng.su@siemens.com>
+---
+ targetfs/ti654x/etc/init.d/rc.pvr | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/targetfs/ti654x/etc/init.d/rc.pvr b/targetfs/ti654x/etc/init.d/rc.pvr
+index 7da0e4d..34188fc 100755
+--- a/targetfs/ti654x/etc/init.d/rc.pvr
++++ b/targetfs/ti654x/etc/init.d/rc.pvr
+@@ -1,4 +1,12 @@
+ #!/bin/sh
++### BEGIN INIT INFO
++# Provides: pvr
++# Required-Start:    $local_fs $syslog $remote_fs dbus
++# Required-Stop:     $local_fs $syslog $remote_fs
++# Default-Start:     2 3 4 5
++# Default-Stop:      0 1 6
++# Short-Description: Start pvr daemons
++### END INIT INFO
+ #@Copyright     Copyright (c) Imagination Technologies Ltd. All Rights Reserved
+ #@License       MIT
+ # The contents of this file are subject to the MIT license as set out below.
+-- 
+2.25.1
+
