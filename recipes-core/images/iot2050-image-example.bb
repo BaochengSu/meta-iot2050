@@ -100,4 +100,4 @@ IMAGE_INSTALL += " \
 
 IMAGE_INSTALL += "pvrsrvkm-${KERNEL_NAME}  ti-sgx-um"
 DEPENDS += "libdrm"
-IMAGE_PREINSTALL += "libdrm-omap1"
+IMAGE_PREINSTALL += "libdrm-omap1 xserver-xorg-video-omap"
