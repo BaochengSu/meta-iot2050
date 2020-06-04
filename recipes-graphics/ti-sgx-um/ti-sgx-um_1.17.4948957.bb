@@ -27,6 +27,18 @@ do_prepare_build() {
 
 #######
 
+# TODO: "update-rc.d -f rc.pvr defaults"
+# TODO: add header to rc.pvr:
+### BEGIN INIT INFO
+# Provides: pvr
+# Required-Start:    $local_fs $syslog $remote_fs dbus
+# Required-Stop:     $local_fs $syslog $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start pvr daemons
+### END INIT INFO
+
+# This is the rc.pvr update-rc.d command copied from arago project, just for reference.
 #INITSCRIPT_NAME = "rc.pvr"
 #INITSCRIPT_PARAMS = "defaults 8"
 
