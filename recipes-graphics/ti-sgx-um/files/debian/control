@@ -13,8 +13,12 @@ Architecture: arm64
 Depends: ${misc:Depends}, ${shlibs:Depends}, libdrm2, libdrm-omap1, udev,
  libwayland-client0, libwayland-cursor0, libwayland-egl1, libwayland-server0,
  wayland-protocols, libffi6, expat
-Provides: libegl1 (= 1.1.0), libgles1 (= 1.1.0), libgles2 (= 1.1.0), libgbm1 (= 18.3.6)
-Conflicts: libegl1, libgles1, libgles2, libgbm1
-Replaces: libegl1, libgles1, libgles2, libgbm1
+Provides: libegl1 (= 1.1.0), 
+          libgles1 (= 1.1.0), 
+          libgles2 (= 1.1.0), 
+          libgbm1 (= 18.3.6), 
+          libglapi-mesa (= 18.3.6-2)
+Conflicts: libegl1, libgles1, libgles2, libgbm1, libglapi-mesa
+Replaces: libegl1, libgles1, libgles2, libgbm1, libglapi-mesa
 Description: TI AM654x SGX video card user mode driver
 
