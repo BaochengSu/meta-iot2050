@@ -15,7 +15,7 @@ SRC_URI += "git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git;branch=${SRC_BR
     "
 
 SRC_BRANCH = "ti-img-sgx/thud/${PV}"
-SRC_REV = "87d7e5c1e4db1bab048939c9719059d549c1e8dd"
+SRC_REV = "2a2e5bb090ced870d73ed4edbc54793e952cc6d8"
 
 S = "${WORKDIR}/git"
 TARGET_PRODUCT = "ti654x"
