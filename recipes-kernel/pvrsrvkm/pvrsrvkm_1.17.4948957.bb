@@ -30,7 +30,7 @@ SRC_URI += "git://git.ti.com/graphics/omap5-sgx-ddk-linux.git;branch=${PVRSRVKM_
 SRC_URI += "file://rules"
 
 PVRSRVKM_BRANCH = "ti-img-sgx/1.17.4948957/k4.19"
-PVRSRVKM_REV = "dbdbd9309a58ee723fc827ef5fd45c28347cf61f"
+PVRSRVKM_REV = "2a777b8fb72a89d299b82845d42b63b2a2618daa"
 
 S = "${WORKDIR}/git"
 
