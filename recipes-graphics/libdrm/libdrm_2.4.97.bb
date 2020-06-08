@@ -10,6 +10,8 @@
 
 inherit dpkg
 
+PROVIDES += "libdrm-omap1"
+
 # these patches are from TI's arago project
 SRC_URI += " \
     apt://libdrm \
