@@ -1,7 +1,7 @@
-From 5809de4e53c2ace180563fae1b7a7c35ee01ce76 Mon Sep 17 00:00:00 2001
+From 135ecdbc5f35d5807ebedafc3de1e8d7550957e5 Mon Sep 17 00:00:00 2001
 From: zengchao <chao.zeng@siemens.com>
 Date: Wed, 6 Nov 2019 11:21:49 +0800
-Subject: [PATCH 11/22] setting the RJ45 port led behavior
+Subject: [PATCH 09/14] setting the RJ45 port led behavior
 
 Signed-off-by: zengchao <chao.zeng@siemens.com>
 ---
@@ -9,12 +9,12 @@ Signed-off-by: zengchao <chao.zeng@siemens.com>
  1 file changed, 6 insertions(+)
 
 diff --git a/drivers/net/phy/dp83867.c b/drivers/net/phy/dp83867.c
-index 5f9e9e85788e..88cd51af334c 100644
+index a7c34418eb37..200edf3ca11b 100644
 --- a/drivers/net/phy/dp83867.c
 +++ b/drivers/net/phy/dp83867.c
-@@ -41,6 +41,10 @@
- #define DP83867_RGMIIDCTL	0x0086
- #define DP83867_IO_MUX_CFG	0x0170
+@@ -50,6 +50,10 @@
+ #define DP83867_10M_SGMII_CFG   0x016F
+ #define DP83867_10M_SGMII_RATE_ADAPT_MASK BIT(7)
  
 +/*RJ45 led configuration*/
 +#define DP83867_LEDCR_1      0x0018
@@ -22,8 +22,8 @@ index 5f9e9e85788e..88cd51af334c 100644
 +
  #define DP83867_SW_RESET	BIT(15)
  #define DP83867_SW_RESTART	BIT(14)
- #define STRAP_STS2_FLD_MASK	BIT(10)
-@@ -332,6 +336,8 @@ static int dp83867_config_init(struct phy_device *phydev)
+ 
+@@ -449,6 +453,8 @@ static int dp83867_config_init(struct phy_device *phydev)
  		val |= (dp83867->clk_output_sel << DP83867_IO_MUX_CFG_CLK_O_SEL_SHIFT);
  		phy_write_mmd(phydev, DP83867_DEVADDR, DP83867_IO_MUX_CFG, val);
  	}
@@ -33,5 +33,5 @@ index 5f9e9e85788e..88cd51af334c 100644
  	return 0;
  }
 -- 
-2.17.1
+2.25.1
 
