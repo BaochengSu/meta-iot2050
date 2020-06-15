@@ -23,15 +23,19 @@ SRC_URI += " \
     file://0002-Add-sync_fence_info-and-sync_pt_info.patch;apply=no \
 "
 
-CHANGELOG_V="<orig-version>+iot2050"
+# CHANGELOG_V="<orig-version>"
 
 do_prepare_build() {
-	deb_add_changelog
+	# deb_add_changelog
 
 	# apply patch
-	cd ${S}
-	quilt import ${WORKDIR}/*.patch
-	quilt push -a
+	cp ${WORKDIR}/*.patch ${S}/debian/patches
+	echo "musl-ioctl.patch" >> ${S}/debian/patches/series
+	echo "0001-Add-option-to-run-a-test-indefinitely.patch" >> ${S}/debian/patches/series
+	echo "0001-omap-fix-omap_bo_size-for-tiled-buffers.patch" >> ${S}/debian/patches/series
+	echo "0002-omap-add-OMAP_BO-flags-to-affect-buffer-allocation.patch" >> ${S}/debian/patches/series
+	echo "0001-libsync-add-support-for-pre-v4.7-kernels.patch" >> ${S}/debian/patches/series
+	echo "0002-Add-sync_fence_info-and-sync_pt_info.patch" >> ${S}/debian/patches/series
 
 	# patch rules, so that the libdrm-omap1 can be compiled on arm64
 	sed -i -e '/Domap/d' ${S}/debian/rules
