@@ -1,7 +1,7 @@
-From e569b4c2ba14b0bb8585f035347ec3b2e6b6668b Mon Sep 17 00:00:00 2001
+From 83aabda10286beca83cde7e3e29a052768329102 Mon Sep 17 00:00:00 2001
 From: Su Baocheng <baocheng.su@siemens.com>
 Date: Thu, 4 Jun 2020 15:14:55 +0800
-Subject: [PATCH] refact: change the libdir for debian buster distro
+Subject: [PATCH 1/4] refact: change the libdir for debian buster distro
 
 Signed-off-by: Su Baocheng <baocheng.su@siemens.com>
 ---

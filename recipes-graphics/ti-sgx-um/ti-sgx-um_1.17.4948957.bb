@@ -11,6 +11,8 @@ inherit dpkg
 SRC_URI += "git://git.ti.com/graphics/omap5-sgx-ddk-um-linux.git;branch=${SRC_BRANCH};rev=${SRC_REV} \
     file://0001-refact-change-the-libdir-for-debian-buster-distro.patch \
     file://0002-refact-add-header-to-rc.pvr-for-new-update.rc-comman.patch \
+    file://0003-fix-change-dri-lib-path.patch \
+    file://0004-feat-change-lib-path-in-pkgconfig.patch \
     file://debian \
     "
 

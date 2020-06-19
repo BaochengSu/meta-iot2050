@@ -1,0 +1,30 @@
+From 282121acfb33e44937b5373a40414c7ba7a17891 Mon Sep 17 00:00:00 2001
+From: Su Baocheng <baocheng.su@siemens.com>
+Date: Fri, 19 Jun 2020 11:06:16 +0800
+Subject: [PATCH 3/4] fix: change dri lib path
+
+---
+ Makefile | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/Makefile b/Makefile
+index a652178..9c38ce7 100755
+--- a/Makefile
++++ b/Makefile
+@@ -7,6 +7,8 @@ etcdir = /etc
+ bindir = ${prefix}/bin
+ incdir = ${prefix}/include
+ libdir = ${prefix}/lib/aarch64-linux-gnu
++libdir_dri = ${prefix}/lib
++
+ 
+ all:
+ 
+@@ -19,3 +21,4 @@ install:
+ 	cp -ar ${SRCDIR}/bin/* ${DESTDIR}${bindir}
+ 	cp -ar ${SRCDIR}/include/* ${DESTDIR}${incdir}
+ 	cp -ar ${SRCDIR}/lib/* ${DESTDIR}${libdir}
++	cp -ar ${SRCDIR}/lib/dri ${DESTDIR}${libdir_dri}
+-- 
+2.25.1
+

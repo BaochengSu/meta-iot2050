@@ -1,7 +1,7 @@
-From 26f8d8c12fa5276ddd0e8706dc5954628538e145 Mon Sep 17 00:00:00 2001
+From 932053eff36766b4eb3efdbef9b1601d81a56912 Mon Sep 17 00:00:00 2001
 From: Su Baocheng <baocheng.su@siemens.com>
 Date: Thu, 4 Jun 2020 15:20:40 +0800
-Subject: [PATCH 2/2] refact: add header to rc.pvr for new update.rc command
+Subject: [PATCH 2/4] refact: add header to rc.pvr for new update.rc command
 
 Signed-off-by: Su Baocheng <baocheng.su@siemens.com>
 ---

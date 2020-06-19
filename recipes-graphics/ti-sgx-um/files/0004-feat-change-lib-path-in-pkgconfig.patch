@@ -1,0 +1,71 @@
+From 5628eb54c3fb13849199f550c8b59f8a1c0500d1 Mon Sep 17 00:00:00 2001
+From: Su Baocheng <baocheng.su@siemens.com>
+Date: Fri, 19 Jun 2020 11:08:59 +0800
+Subject: [PATCH 4/4] feat: change lib path in pkgconfig
+
+---
+ targetfs/ti654x/lib/pkgconfig/egl.pc       | 2 +-
+ targetfs/ti654x/lib/pkgconfig/gbm.pc       | 2 +-
+ targetfs/ti654x/lib/pkgconfig/gles_cm.pc   | 2 +-
+ targetfs/ti654x/lib/pkgconfig/glesv1_cm.pc | 2 +-
+ targetfs/ti654x/lib/pkgconfig/glesv2.pc    | 2 +-
+ 5 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/targetfs/ti654x/lib/pkgconfig/egl.pc b/targetfs/ti654x/lib/pkgconfig/egl.pc
+index a7d3cdc..c5b80bb 100644
+--- a/targetfs/ti654x/lib/pkgconfig/egl.pc
++++ b/targetfs/ti654x/lib/pkgconfig/egl.pc
+@@ -1,5 +1,5 @@
+ prefix=/usr
+-libdir=${prefix}/lib
++libdir=${prefix}/lib/aarch64-linux-gnu
+ includedir=${prefix}/include
+ 
+ Name: egl
+diff --git a/targetfs/ti654x/lib/pkgconfig/gbm.pc b/targetfs/ti654x/lib/pkgconfig/gbm.pc
+index a33e6f4..b50f63b 100644
+--- a/targetfs/ti654x/lib/pkgconfig/gbm.pc
++++ b/targetfs/ti654x/lib/pkgconfig/gbm.pc
+@@ -1,5 +1,5 @@
+ prefix=/usr
+-libdir=${prefix}/lib
++libdir=${prefix}/lib/aarch64-linux-gnu
+ includedir=${prefix}/include
+ 
+ Name: gbm
+diff --git a/targetfs/ti654x/lib/pkgconfig/gles_cm.pc b/targetfs/ti654x/lib/pkgconfig/gles_cm.pc
+index 4c924a6..629688e 100644
+--- a/targetfs/ti654x/lib/pkgconfig/gles_cm.pc
++++ b/targetfs/ti654x/lib/pkgconfig/gles_cm.pc
+@@ -1,5 +1,5 @@
+ prefix=/usr
+-libdir=${prefix}/lib
++libdir=${prefix}/lib/aarch64-linux-gnu
+ includedir=${prefix}/include
+ 
+ Name: gles_cm
+diff --git a/targetfs/ti654x/lib/pkgconfig/glesv1_cm.pc b/targetfs/ti654x/lib/pkgconfig/glesv1_cm.pc
+index 6000244..aac9ac4 100644
+--- a/targetfs/ti654x/lib/pkgconfig/glesv1_cm.pc
++++ b/targetfs/ti654x/lib/pkgconfig/glesv1_cm.pc
+@@ -1,5 +1,5 @@
+ prefix=/usr
+-libdir=${prefix}/lib
++libdir=${prefix}/lib/aarch64-linux-gnu
+ includedir=${prefix}/include
+ 
+ Name: glesv1_cm
+diff --git a/targetfs/ti654x/lib/pkgconfig/glesv2.pc b/targetfs/ti654x/lib/pkgconfig/glesv2.pc
+index 71eba60..2777099 100644
+--- a/targetfs/ti654x/lib/pkgconfig/glesv2.pc
++++ b/targetfs/ti654x/lib/pkgconfig/glesv2.pc
+@@ -1,5 +1,5 @@
+ prefix=/usr
+-libdir=${prefix}/lib
++libdir=${prefix}/lib/aarch64-linux-gnu
+ includedir=${prefix}/include
+ 
+ Name: glesv2
+-- 
+2.25.1
+
