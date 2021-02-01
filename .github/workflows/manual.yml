@@ -1,0 +1,48 @@
+name: PackageLock
+
+on: workflow_dispatch
+
+jobs:
+  debian-example-image:
+    name: Debian example image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build image
+        run: ./kas-container build kas-iot2050-example.yml:kas/opt/package-lock.yml
+      - name: Upload image
+        uses: actions/upload-artifact@v2
+        with:
+          name: iot2050-example-image
+          path: build/tmp/deploy/images/iot2050/iot2050-image-example-iot2050-debian-iot2050.wic.img*
+
+  debian-rt-example-image:
+    name: Debian RT example image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build image
+        run: ./kas-container build kas-iot2050-example.yml:kas/opt/preempt-rt.yml:kas/opt/package-lock.yml
+      - name: Upload image
+        uses: actions/upload-artifact@v2
+        with:
+          name: iot2050-example-image-rt
+          path: build/tmp/deploy/images/iot2050/iot2050-image-example-iot2050-debian-iot2050.wic.img*
+
+  bootloaders:
+    name: Bootloaders
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Basic
+        run: ./kas-container build kas-iot2050-boot-basic.yml:kas/opt/package-lock.yml
+      - name: Advanced
+        run: ./kas-container build kas-iot2050-boot-advanced.yml:kas/opt/package-lock.yml
+      - name: Archive bootloaders
+        uses: actions/upload-artifact@v2
+        with:
+          name: iot2050-bootloaders
+          path: build/tmp/deploy/images/iot2050/*.bin
