@@ -1,5 +1,9 @@
 #! /usr/bin/python3
-
+#
+# Copyright (c) Siemens AG, 2021
+#
+# This file is subject to the terms and conditions of the MIT License.  See
+# COPYING.MIT file in the top-level directory.
 import traceback
 from snack import *
 import subprocess
@@ -8,7 +12,12 @@ import os
 import json
 import mraa
 from collections import OrderedDict
-
+import sys
+import fcntl
+import struct
+import tty
+import termios
+import select
 
 class ansicolors:
     clear = '\033[2J'
@@ -17,7 +26,7 @@ class ansicolors:
 class TopMenu:
     def __init__(self):
         self.gscreen = SnackScreen()
-        self.boardType = subprocess.check_output('grep -a -o -P "IOT2050 \w*" /proc/device-tree/model',
+        self.boardType = subprocess.check_output('grep -a -o -P "IOT2050[\w\s]+" /proc/device-tree/model',
                                                  shell=True).lstrip().rstrip().decode('utf-8')
 
     def show(self):
@@ -49,7 +58,8 @@ class OsSettingsMenu:
                                                 title='OS Settings',
                                                 text='',
                                                 items=[('Change Hostname', self.changeHostname),
-                                                       ('Change Password', self.changePassword)],
+                                                       ('Change Password', self.changePassword),
+                                                       ('Change Time Zone', self.changeTimeZone)],
                                                 buttons=[('Back', 'back', 'ESC')])
 
         if action == 'back':
@@ -76,6 +86,11 @@ class OsSettingsMenu:
         print(ansicolors.clear)   # Clear console
         subprocess.call('passwd', shell=True)
         exit()
+
+    def changeTimeZone(self):
+        self.topmenu.gscreen.suspend()
+        subprocess.call('dpkg-reconfigure tzdata', shell=True)
+        self.topmenu.gscreen.resume()
 
 
 class NetworkingMenu:
@@ -473,9 +488,9 @@ class PeripheralsMenu:
         self.terminateStatus = ''
         if (switchMode == 'RS485') or (switchMode == 'RS422'):
             self.terminateStatus = self.selectTerminate()
-        if self.topmenu.boardType == 'IOT2050 Basic':
+        if self.topmenu.boardType.startswith('IOT2050 Basic'):
             self.setBasicBoard(switchMode)
-        elif self.topmenu.boardType == 'IOT2050 Advanced':
+        elif self.topmenu.boardType.startswith('IOT2050 Advanced'):
             self.setAdvancedBoard(switchMode)
         else:
             return
@@ -484,6 +499,8 @@ class PeripheralsMenu:
         self.config['User_configuration']['External_Serial_Current_Mode'] = switchMode
         self.saveConfig(self.config)
         subprocess.call('sync', shell=True)
+        if self.topmenu.boardType == 'IOT2050 Advanced PG2':
+            subprocess.call('switchserialmode -r', shell=True)
 
     def currentMode(self):
         mode = self.config['User_configuration']['External_Serial_Current_Mode']
@@ -510,10 +527,11 @@ class PeripheralsMenu:
         self.saveConfig(self.config)
         if mode == 'RS485':
             self.setRS485SetupHoldTime()
-        ButtonChoiceWindow(screen=self.topmenu.gscreen,
-                           title='Note',
-                           text='You need to power cycle the device for the changes to take effect',
-                           buttons=['Ok'])
+        if self.topmenu.boardType != 'IOT2050 Advanced PG2':
+            ButtonChoiceWindow(screen=self.topmenu.gscreen,
+                            title='Note',
+                            text='You need to power cycle the device for the changes to take effect',
+                            buttons=['Ok'])
 
     def setRS485SetupHoldTime(self):
         command = 'switchserialmode cp210x -D CP2102N24 -d | grep -o -P \"setup-time\\(0x\\w*\\)\" | grep -o -P \"0x\\w*\"'
@@ -584,15 +602,78 @@ class PeripheralsMenu:
         return 'on' if rdgroup.getSelection() else 'off'
 
 
+class TerminalResize:
+    """
+    python3 has get_terminal size, but it doesn't actually query
+    the terminal, just trusts current stty settings, which isn't
+    useful here.
+    """
+    @classmethod
+    def resize(cls):
+        fd = os.open('/dev/tty', os.O_RDWR | os.O_NOCTTY)
+        with open(fd, 'wb+', buffering=0) as ttyfd:
+            # Save the terminal state
+            fileno = sys.stdin.fileno()
+            stty_sav = termios.tcgetattr(sys.stdin)
+            fc_sav = fcntl.fcntl(fileno, fcntl.F_GETFL)
+
+            # Turn off echo.
+            stty_new = termios.tcgetattr(sys.stdin)
+            stty_new[3] = stty_new[3] & ~termios.ECHO
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, stty_new)
+            # Getting the size of the actual terminal window
+            # Reference:https://wiki.osdev.org/Terminals
+            ttyfd.write(b'\033[7\033[r\033[999;999H\033[6n')
+            ttyfd.flush()
+
+            # Put stdin into cbreak mode.
+            tty.setcbreak(sys.stdin)
+
+            # Nonblocking mode.
+            fcntl.fcntl(fileno, fcntl.F_SETFL, fc_sav | os.O_NONBLOCK)
+
+            try:
+                while True:
+                    r, w, e = select.select([ttyfd], [], [])
+                    if r:
+                        output = sys.stdin.read()
+                        break
+            finally:
+                # Reset the terminal back to normal cooked mode
+                termios.tcsetattr(fileno, termios.TCSAFLUSH, stty_sav)
+                fcntl.fcntl(fileno, fcntl.F_SETFL, fc_sav)
+
+            rows, cols = list(map(int, re.findall(r'\d+', output)))
+
+            fcntl.ioctl(ttyfd, termios.TIOCSWINSZ,
+                        struct.pack("HHHH", rows, cols, 0, 0))
+
+
 def main():
+    default_console_login = False
+    # get the input type
+    input_type = os.readlink('/proc/self/fd/0')
+    if "ttyS" in input_type or "ttyUSB" in input_type:
+        default_console_login = True
+
+    if default_console_login:
+        TerminalResize.resize()
+        default_console_level = subprocess.check_output('cat /proc/sys/kernel/printk',shell=True).decode('utf-8')[0]
+        # Shield KERN_DEBUG KERN_INFO KERN_NOTICE
+        subprocess.call('dmesg -n 5', shell=True)
+
+    mainwindow = TopMenu()
     try:
-        mainwindow = TopMenu()
         mainwindow.show()
-    except:
-        pass
-    finally:
+    except Exception as e:
         mainwindow.close()
-        return ''
+        raise e
+
+    # Restore default console level
+    if default_console_login:
+        subprocess.call('dmesg -n {}'.format(default_console_level), shell=True)
+
+    mainwindow.close()
 
 
 if __name__ == '__main__':

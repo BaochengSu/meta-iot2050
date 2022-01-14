@@ -33,6 +33,7 @@ IOT2050_DEBIAN_DEBUG_PACKAGES = " \
     stress-ng \
     build-essential \
     python3 \
+    python-is-python3 \
     gawk \
     curl \
     wget \
@@ -96,6 +97,7 @@ IMAGE_INSTALL += " \
     expand-on-first-boot \
     sshd-regen-keys \
     regen-rootfs-uuid \
+    install-on-emmc \
     customizations-example \
     switchserialmode \
     iot2050setup \
@@ -104,11 +106,5 @@ IMAGE_INSTALL += " \
     mraa \
     node-red \
     node-red-gpio \
-    node-red-dashboard \
-    node-red-contrib-opcua \
-    node-red-contrib-modbus \
-    node-red-contrib-s7 \
-    mindconnect-node-red-contrib-mindconnect \
-    node-red-node-serialport \
-    node-red-node-sqlite \
+    node-red-preinstalled-nodes \
     "

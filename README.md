@@ -13,25 +13,13 @@ For example under Debian Linux
 sudo apt install docker.io
 ```
 
-Then build the example image
+Then open the menu to select the desired image and options:
 
 ```shell
-./kas-container build kas-iot2050-example.yml
+./kas-container menu
 ```
 
-Build the example RT image, for example
-
-```shell
-./kas-container build kas-iot2050-example.yml:kas/opt/preempt-rt.yml
-```
-
-Using 3rd-party mirrors, for example
-
-```shell
-./kas-container build kas-iot2050-example.yml:kas/opt/mirror-example.yml
-```
-
-After build complete, the final image is under
+After the build completed, the final image is under
 
 ```text
 build/tmp/deploy/images/iot2050/iot2050-image-example-iot2050-debian-iot2050.wic.img
@@ -45,14 +33,21 @@ build/tmp/deploy/images/iot2050/iot2050-image-example-iot2050-debian-iot2050.wic
 ```shell
 ./kas-container build kas-iot2050-example.yml:kas/opt/sdk.yml
 ```
+(or select SDK in `kas menu`)
 
-After build complete, the SDK tarball is located at
+After the build completed, the SDK tarball is located at
 
 ```text
 build/tmp/deploy/images/iot2050/sdk-isar-arm64.tar.xz
 ```
 
-Please follow the further instruction file `README.sdk` under the SDK tarball
+Please follow the further instruction file `README.sdk` in the SDK tarball.
+
+The SDK is also available as docker image. To import it into a docker host, run
+
+```shell
+docker load -i build/tmp/deploy/images/iot2050/sdk-iot2050-debian-arm64-docker-archive.tar.xz
+```
 
 ## Clean build result
 
@@ -60,28 +55,7 @@ Please follow the further instruction file `README.sdk` under the SDK tarball
 ./kas-container --isar clean
 ```
 
-## Build released version
-
-First checkout the desired tag. Then build the image or sdk by appending the `kas/opt/package-lock.yml`:
-
-```shell
-# example image
-./kas-container build kas-iot2050-example.yml:kas/opt/package-lock.yml
-
-# example rt image
-./kas-container build kas-iot2050-example.yml:kas/opt/preempt-rt.yml:kas/opt/package-lock.yml
-
-# bootloader for advanced board
-./kas-container build kas-iot2050-boot-advanced.yml:kas/opt/package-lock.yml
-
-# bootloader for basic board
-./kas-container build kas-iot2050-boot-basic.yml:kas/opt/package-lock.yml
-
-# SDK
-./kas-container build kas-iot2050-example.yml:kas/opt/sdk.yml:kas/opt/package-lock.yml
-```
-
-## Booting the Image from SD card
+## Booting the image from SD card
 
 Under Linux, insert an unused SD card. Assuming the SD card takes device
 /dev/mmcblk0, use dd to copy the image to it. For example:
@@ -106,6 +80,23 @@ use that to ssh in.
 
 NOTE: To login, the default username and password is `root`.
 And you are required to change the default password when first login.
+
+## Installing the image on the eMMC (IOT2050 Advanced only)
+
+During the very first boot of the image from an SD card or USB stick, you can
+request the installation to the eMMC. For that, press the USER button while
+the status LED is blinking orange during that first boot. Hold the button for
+at least 5 seconds to start the installation.
+
+NOTE: All content of the eMMC will be overwritten by this procedure!
+
+The ongoing installation is signaled by a fast blinking status LED. Wait for
+several minutes until the LED stops blinking and the device reboots to the
+eMMC. You can safely remove the SD card or USB stick at that point.
+
+The installation can also be triggered automatically by creating the file
+`/etc/install-on-emmc` on the vanilla image by mounting it under Linux and
+executing, e.g., `touch <mountpoint>/etc/install-on-emmc`.
 
 ## Selecting a boot device
 

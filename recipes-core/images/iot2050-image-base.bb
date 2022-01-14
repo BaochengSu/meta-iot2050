@@ -11,7 +11,12 @@
 inherit image
 
 DESCRIPTION = "IOT2050 Debian Base Image"
+
+IMAGE_INSTALL += "u-boot-iot2050-config"
+IMAGE_INSTALL += "iot2050-firmware"
 IMAGE_INSTALL += "customizations-base"
+
+IMAGE_PREINSTALL += "libubootenv-tool"
 
 python aggregate_mainline_apt_sources () {
     import shutil
@@ -50,4 +55,9 @@ python image_postprocess_restore_sources_list () {
         bb.build.exec_func("install_mainline_sources_list", d)
     else:
         bb.note('No need to restore sources for mainline packages')
+}
+
+python do_image_append() {
+    bb.warn('This image is NOT COMPATIBLE with current official firmware releases!\n'
+            'It is recommended to build release V01.01.01 instead.')
 }

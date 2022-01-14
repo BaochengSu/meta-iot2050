@@ -15,7 +15,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: iot2050-example-image
-          path: build/tmp/deploy/images/iot2050/iot2050-image-example-iot2050-debian-iot2050.wic.img*
+          path: |
+            build/tmp/deploy/images/iot2050/iot2050-image-example-iot2050-debian-iot2050.wic.img
+            build/tmp/deploy/images/iot2050/iot2050-image-example-iot2050-debian-iot2050.wic.img.bmap
 
   debian-rt-example-image:
     name: Debian RT example image
@@ -29,18 +31,20 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: iot2050-example-image-rt
-          path: build/tmp/deploy/images/iot2050/iot2050-image-example-iot2050-debian-iot2050.wic.img*
+          path: |
+            build/tmp/deploy/images/iot2050/iot2050-image-example-iot2050-debian-iot2050.wic.img
+            build/tmp/deploy/images/iot2050/iot2050-image-example-iot2050-debian-iot2050.wic.img.bmap
 
   bootloaders:
-    name: Bootloaders
+    name: Bootloaders for both PG1 and PG2
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Basic
-        run: ./kas-container build kas-iot2050-boot-basic.yml
-      - name: Advanced
-        run: ./kas-container build kas-iot2050-boot-advanced.yml
+      - name: Build bootloader image for PG1
+        run: ./kas-container build kas-iot2050-boot-pg1.yml
+      - name: Build bootloader image for PG2
+        run: ./kas-container build kas-iot2050-boot-pg2.yml
       - name: Archive bootloaders
         uses: actions/upload-artifact@v2
         with:

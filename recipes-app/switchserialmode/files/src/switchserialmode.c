@@ -203,11 +203,11 @@ void gpio_set(const char *line_name, int value)
     gpiod_line_close_chip(line);
 }
 
-static void gpio_set_mode(int va, int vb)
+static void gpio_set_mode(int mode0, int mode1)
 {
     gpio_set("UART0-enable", 1);
-    gpio_set("UART0-mode0", va);
-    gpio_set("UART0-mode1", vb);
+    gpio_set("UART0-mode0", mode0);
+    gpio_set("UART0-mode1", mode1);
 }
 
 static void gpio_set_terminate(int onoff)
@@ -219,12 +219,12 @@ static void gpio_switch_mode(const char *mode, int terminate)
 {
     if(compare_string(mode, "rs232", e_case_insensitive))
     {
-        gpio_set_mode(0, 1);
+        gpio_set_mode(1, 0);
         gpio_set_terminate(0);
     }
     else if(compare_string(mode, "rs485", e_case_insensitive))
     {
-        gpio_set_mode(1, 0);
+        gpio_set_mode(0, 1);
         gpio_set_terminate(terminate);
     }
     else if(compare_string(mode, "rs422", e_case_insensitive))
@@ -349,15 +349,17 @@ static E_STATUS ttyuart_switchto_rs485(const char *uartdev, int logicLevel)
 
     SET_UART_RTS_ACTIVE_LOGIC(rs485conf.flags, logicLevel);
 
-    rs485conf.flags |= SER_RS485_ENABLED | SER_RS485_RX_DURING_TX;
+    rs485conf.flags |= SER_RS485_ENABLED;
 
     return ttyuart_set_rs485conf(uartdev, &rs485conf);
 }
 
-static E_STATUS ttyuart_switchto_rs422(const char *uartdev)
+static E_STATUS ttyuart_switchto_rs422(const char *uartdev, int logicLevel)
 {
     struct serial_rs485 rs485conf;
     memset(&rs485conf, 0, sizeof(rs485conf));
+
+    SET_UART_RTS_ACTIVE_LOGIC(rs485conf.flags, logicLevel);
 
     rs485conf.flags |= SER_RS485_ENABLED | SER_RS485_RX_DURING_TX;
 
@@ -412,7 +414,7 @@ static void ttyuart_command_handle(int argc, char **argv)
     }
     else if(0 == strcasecmp(mode, "rs422"))
     {
-        ttyuart_switchto_rs422(devType);
+        ttyuart_switchto_rs422(devType, logicLevel);
     }
     else
     {
@@ -1193,6 +1195,14 @@ static void cp210x_command_handle(int argc, char **argv)
     libusb_exit(g_LibusbContext);
 }
 
+static void cp210x_hardware_reset(void)
+{
+    usleep(60*1000);
+    gpio_set("CP2102N-RESET", 0);
+    sleep(1);
+    gpio_set("CP2102N-RESET", 1);
+}
+
 static void print_usage(const char *name)
 {
     printf("\
@@ -1234,6 +1244,10 @@ int main(int argc, char **argv)
         {
             gpio_switch_mode(mode, terminate);
         }
+    }
+     else if(compare_string(argv[1], "-r,--reset", e_case_insensitive))
+    {
+        cp210x_hardware_reset();
     }
     else
     {
