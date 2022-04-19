@@ -81,16 +81,25 @@ IOT2050_DEBIAN_BT_PACKAGES = " \
     bluez \
     pulseaudio-module-bluetooth \
     "
+
 # alsa support
 IOT2050_DEBIAN_ALSA_PACKAGES = " \
     alsa-utils \
     alsa-tools \
     "
+
+# multiarch support
+IOT2050_DEBIAN_MULTIARCH_PACKAGES = " \
+    libc6:armhf \
+    libstdc++6:armhf \
+    "
+
 IMAGE_PREINSTALL += " \
     ${IOT2050_DEBIAN_DEBUG_PACKAGES} \
     ${IOT2050_DEBIAN_WIFI_PACKAGES} \
     ${IOT2050_DEBIAN_BT_PACKAGES} \
     ${IOT2050_DEBIAN_ALSA_PACKAGES} \
+    ${IOT2050_DEBIAN_MULTIARCH_PACKAGES} \
     "
 
 IMAGE_INSTALL += " \
@@ -108,3 +117,11 @@ IMAGE_INSTALL += " \
     node-red-gpio \
     node-red-preinstalled-nodes \
     "
+
+IOT2050_CORAL_SUPPORT ?= "1"
+
+IMAGE_INSTALL += "${@ ' \
+    python3-pycoral \
+    pycoral-examples \
+    gasket-module-${KERNEL_NAME} \
+    ' if d.getVar('IOT2050_CORAL_SUPPORT') == '1' else ''}"

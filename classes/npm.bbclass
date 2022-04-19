@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: MIT
 
 # HOWTO generate an npm-shrinkwrap.json:
-#   npm install --global-style <my-favorite-package>
+#   npm config set global-style=true (you may want to reset this afterward)
+#   npm install <my-favorite-package>
 #   cp package-lock.json /path/to/recipe/files/npm-shrinkwrap.json
 
 inherit dpkg-raw
@@ -242,4 +243,12 @@ do_install() {
     fi
 
     dpkg_undo_mounts
+}
+
+do_prepare_build_append() {
+    # disable slow stripping - not enough value for our ad-hoc npm packaging
+    cat <<EOF >> ${S}/debian/rules
+
+override_dh_strip_nondeterminism:
+EOF
 }
