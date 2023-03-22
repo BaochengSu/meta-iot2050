@@ -1,0 +1,180 @@
+#!/usr/bin/env python3
+#
+# Copyright (c) Siemens AG, 2023
+#
+# Authors:
+#  Su Bao Cheng <baocheng.su@siemens.com>
+#
+# This file is subject to the terms and conditions of the MIT License.  See
+# COPYING.MIT file in the top-level directory.
+#
+import os
+import sys
+import argparse
+import subprocess
+
+
+__version__ = "${PV}"
+
+
+EFIVARFS_MOUNT_POINT = '/sys/firmware/efi/efivars'
+
+
+def err_print(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+
+def exit_on_failure(message, code=1):
+    err_print()
+    err_print(message)
+    err_print()
+    exit(code)
+
+
+def dump_subprocess_error(e: subprocess.CalledProcessError):
+    err_print()
+    err_print("ERROR:\t" + str(e).strip())
+    stdout = str(e.stdout).strip()
+    stderr = str(e.stderr).strip()
+    if stdout != '':
+        err_print("ERROR:\tSTDOUT: " + stdout)
+    if stderr != '':
+        err_print("ERROR:\tSTDERR: " + stderr)
+
+
+def change_efivarfs_immutable_flag(immutable: bool):
+    if immutable:
+        action = 'Adding'
+        option = '+i'
+    else:
+        action = 'Removing'
+        option = '-i'
+
+    for file in os.listdir(EFIVARFS_MOUNT_POINT):
+        if (file.startswith('db-')
+                or file.startswith('KEK-')
+                or file.startswith('PK-')):
+            filepath = os.path.join(EFIVARFS_MOUNT_POINT, file)
+            print("{} the immutable flag of {}... ".format(action, filepath),
+                  end='')
+            cmd = 'chattr {} {}'.format(option, filepath)
+            result = subprocess.run(
+                cmd, shell=True, capture_output=True, check=True, text=True)
+            print("Done.")
+
+
+def do_prepare():
+    message_prepare_fail = "Fail to prepare the efivarfs for manipulating. \
+You may need to check the environment."
+
+    try:
+        mod_required = 'tee_stmm_efi'
+        print("Checking for the kernel module {}... ".format(mod_required),
+              end='')
+        cmd = 'lsmod'
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, check=True, text=True)
+        if len([i for i in result.stdout.split('\n')
+                if i.startswith("{} ".format(mod_required))]) == 1:
+            print("Done.")
+        else:
+            print("ERROR: {} is not loaded!".format(mod_required))
+            exit_on_failure(message_prepare_fail)
+    except subprocess.CalledProcessError as e:
+        dump_subprocess_error(e)
+        exit_on_failure(message_prepare_fail, code=e.returncode)
+
+    # tee-supplicant is used to serve the trusted applications running in
+    # optee-os for accessing RPMB partition.
+    try:
+        print("Checking for the service tee-supplicant... ", end='')
+        cmd = 'systemctl is-active tee-supplicant.service'
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, check=True, text=True)
+
+        print("Done.")
+    except subprocess.CalledProcessError as e:
+        print("ERROR: service is inactive!")
+        exit_on_failure(message_prepare_fail)
+
+    # efivarfs must be mounted with read & write option.
+    try:
+        print("Checking for efivarfs mounting... ", end='')
+        cmd = 'findmnt {}'.format(EFIVARFS_MOUNT_POINT)
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, check=True, text=True)
+        efivarfs_mount_error = 'not mounted.'
+        for line in result.stdout.split('\n'):
+            if line.startswith(EFIVARFS_MOUNT_POINT):
+                mount_options = line.strip().split(' ')[-1].split(',')
+                if 'rw' in mount_options and 'ro' not in mount_options:
+                    efivarfs_mount_error = ''
+                else:
+                    efivarfs_mount_error = 'not mounted as read & write.'
+
+        if efivarfs_mount_error != '':
+            print("ERROR:\tefivarfs is {}".format(efivarfs_mount_error))
+            exit_on_failure(message_prepare_fail)
+
+        print("Done.")
+    except subprocess.CalledProcessError as e:
+        dump_subprocess_error(e)
+        exit_on_failure(message_prepare_fail, code=e.returncode)
+
+    # efitools provides convenient commands to manipulate the UEFI authenticated
+    # variables.
+    try:
+        print("Checking for the efitools pre-installation... ", end='')
+        cmd = 'which efi-readvar'
+        result = subprocess.run(
+            cmd, shell=True, capture_output=True, check=True, text=True)
+
+        print("Done.")
+    except subprocess.CalledProcessError as e:
+        # if not installed, the `which` command returns non-zero
+        print("ERROR: not pre-installed!")
+        exit_on_failure(message_prepare_fail)
+
+    # By default the UEFI authenticated variable files in efivarfs have the
+    # immutable flag. This prevents from modifying it.
+    try:
+        change_efivarfs_immutable_flag(immutable=False)
+    except subprocess.CalledProcessError as e:
+        dump_subprocess_error(e)
+        exit_on_failure(message_prepare_fail, code=e.returncode)
+
+    print()
+    print('OK:\tNow you can use efitools to manipulate the UEFI authenticated variables')
+    print()
+
+
+def do_finish():
+    try:
+        change_efivarfs_immutable_flag(immutable=True)
+    except subprocess.CalledProcessError as e:
+        dump_subprocess_error(e)
+        exit_on_failure(
+            "Fail to add immutable flag. However, normally this could be ignored.",
+            code=e.returncode)
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description="Helper for manipulating efivarfs")
+    parser.add_argument('action', type=str, choices=['prepare', 'finish'],
+                        help='action')
+    parser.add_argument('-f', '--force',
+                        help='Force mode, ignore the root privilege checking',
+                        action='store_true')
+    parser.add_argument('-v', '--version', action='version',
+                        version='%(prog)s {}'.format(__version__))
+    args = parser.parse_args()
+
+    if os.geteuid() != 0 and not args.force:
+        exit_on_failure('You have to be root to run this program. \
+If you really want to run as non-root, please use the --force option.')
+
+    if args.action == 'prepare':
+        do_prepare()
+    elif args.action == 'finish':
+        do_finish()
