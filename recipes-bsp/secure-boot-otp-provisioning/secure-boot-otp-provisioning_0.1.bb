@@ -13,7 +13,6 @@ DESCRIPTION = "Secure Boot OTP key provisioning tool"
 DEBIAN_BUILD_DEPENDS = "openssl, u-boot-tools, device-tree-compiler"
 
 SRC_URI = " \
-    file://its \
     file://keys/custMpk.crt \
     file://keys/custMpk.pem \
     file://keys/custSmpk.crt \
@@ -23,45 +22,53 @@ SRC_URI = " \
     file://make-otpcmd.sh \
     file://rules.tmpl"
 
-OTPCMD_MODE ?= "provision"
-OTPCMD_ITS ?= "its/key-${OTPCMD_MODE}.its"
-OTP_MPK ?= "./keys/custMpk.pem"
-OTP_SMPK ?= "./keys/custSmpk.pem"
-OTP_BMPK ?= ""
-OTPCMD_KEYS ?= "${OTP_MPK} ${OTP_SMPK} ${OTP_BMPK}"
+
+# OTPCMD_KEYS ?= "keys/custMpk.pem keys/custSmpk.pem"
+
+OTP_CMD_ACTION ?= "provision"
+OTP_ENABLE_SECURE_BOOT ?= "n"
+
+OTP_CMD_KEY_1ST ?= "custMpk.pem"
+OTP_CMD_KEY_2ND ?= "custSmpk.pem"
+OTP_CMD_KEY_3RD ?= ""
+
+OTPCMD_BIN ?= "otpcmd.bin"
+OTPCMD_OPTIONS = "${OTP_CMD_ACTION}"
+OTPCMD_OPTIONS += " -1 '${OTP_CMD_KEY_1ST}' -2 ${OTP_CMD_KEY_2ND} -3 ${OTP_CMD_KEY_3RD}"
+OTPCMD_OPTIONS += " -o ${OTPCMD_BIN}"
 
 TEMPLATE_FILES = "rules.tmpl"
-TEMPLATE_VARS += "OTPCMD_MODE OTPCMD_ITS OTPCMD_KEYS"
+TEMPLATE_VARS += "OTPCMD_OPTIONS"
 
 check_dummy_hash() {
-    DUMMY_KEY_HASHES=" \
-	    fb337ffb16be62fc4a97e62bf80faab1506b5f6e4231d6fec1dd01429ba016e3 \
-	    1e436ba092a4a134102ac68489cf64d5978fb28813d348b94331c98194dd7a09 \
-	    fcdf0f123e9a4eba4c8fd4f7b375e110c10fe4c4b916bb800c7a27466c5d791a"
+    local OTPCMD_KEYS_full_path=
+    for k in ${OTPCMD_KEYS}; do
+        OTPCMD_KEYS_full_path="${OTPCMD_KEYS_full_path} ${S}/${k}"
+    done
 
-    for key in ${OTPCMD_KEYS}; do
-        HASH=`openssl rsa -in ${key} -pubout -outform der 2>/dev/null \
-            | openssl dgst -sha256 -binary | hexdump -ve '1/1 "%.2x"'`
-        for dummy in ${DUMMY_KEY_HASHES}; do
-            if [ "$dummy" = "$HASH" ]; then
-                bbwarn "Warning: Dummy key ${key} is used for OTP provisioning!" \
-                    "Please make sure this is what you really want!"
-            fi
-        done
+    ${S}/make-otpcmd.sh -t "${OTPCMD_KEYS_full_path}" 2>&1 | while IFS= read -r line; do
+        if [ -n "${line}" ]; then
+            bbwarn "${line}"
+        fi
     done
 }
 
 do_prepare_build[cleandirs] += "${S}/debian"
 do_prepare_build() {
+    # echo "OTP_CMD_KEY_1ST: _${OTP_CMD_KEY_1ST}_"
+    # echo "OTP_CMD_KEY_2ND: _${OTP_CMD_KEY_2ND}_"
+    # echo "OTP_CMD_KEY_3RD: _${OTP_CMD_KEY_3RD}_"
+    # echo "OTP_ENABLE_SECURE_BOOT: _${OTP_ENABLE_SECURE_BOOT}_"
+    # echo "OTP_CMD_ACTION: _${OTP_CMD_ACTION}_"
+
     deb_debianize
-    mkdir -p ${S}/its
-    cp -rPf ${WORKDIR}/its/* ${S}/its/
     mkdir -p ${S}/keys
     ln -f ${WORKDIR}/keys/* ${S}/keys/
     ln -f ${WORKDIR}/make-otpcmd.sh ${S}
+
     check_dummy_hash
 
-    echo "otpcmd.bin /usr/lib/secure-boot-otp-provisioning/" > \
+    echo "${OTPCMD_BIN} /usr/lib/secure-boot-otp-provisioning/" > \
             ${S}/debian/secure-boot-otp-provisioning.install
 }
 
