@@ -71,3 +71,71 @@ Then upgrade the firmware:
 ```shell
 flashrom -p ch341a_spi -c W25Q128.V -w iot2050-image-boot.bin
 ```
+
+## eMMC RPMB key provisioning
+
+To utilize the eMMC RPMB as the backend for secure storage, an otp key is
+required to be programmed into the eMMC RPMB. This key is unique per-device.
+
+A special firmware build is required to run in a secure operating environment to
+program this key into RPMB. To build this special firmware:
+
+```shell
+./kas-container build kas-iot2050-boot-pg2.yml:kas/opt/rpmb-setup.yml
+```
+
+This will build a special OPTee binary for generating and programming the otp
+key, together with a special U-Boot binary for kicking off the key programming.
+
+> :warning:
+> This special firmware must NOT be signed.
+>
+> This special firmware must run in a secure operating environment.
+>
+> To protected the programmed RPMB key, it is required to flash a signed image,
+> program secure boot keys and enable secure boot.
+
+When booting this special firmware, the RPMB key provisioning starts
+automatically. The result could be checked either:
+
+- By Linux `mmc` command (with `mmc-utils` installed):
+
+    ```shell
+    mmc rpmb read-counter /dev/mmcblk1rpmb
+    ```
+
+    Returned "RPMB operation failed, retcode 0x0007" means no RPMB key was
+    enrolled. on the other hand, the write counter value of RPMB will be read
+    out, for the very first time enrolled RPMB key, the message is like this:
+    "Counter value: 0x00000cef".
+
+- Or by checking the u-boot log, an successful provisioning is indicated with
+  something like:
+
+    ```
+    Wrote 2 bytes
+    Read 2 bytes, value = 1
+    ```
+
+    If failed, the log would print something like "Failed to write(read)
+    persistent value".
+
+You can also perform the key provisioning manually by breaking the u-boot
+autoboot then manually run below commands in u-boot console:
+
+```
+mmc dev 1
+optee_rpmb write_pvalue paired 1
+optee_rpmb read_pvalue paired 2
+```
+
+`mmc dev 1` is for setting the eMMC as the current mmc device.
+
+`optee_rpmb write_pvalue paired 1` triggers the RPMB key programming, then write
+a persistent value 1 named with `paired` to the RPMB based secure storage.
+
+`optee_rpmb read_pvalue paired 2` reads back the written persistent value for
+checking.
+
+The auto provisioning is actually calling these three commands, so you would see
+similar return messages.

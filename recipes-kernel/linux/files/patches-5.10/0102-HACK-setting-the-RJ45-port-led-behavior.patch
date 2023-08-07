@@ -1,7 +1,7 @@
-From 820e95183cbab1a5783a4c83fc2516831ce3f43d Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: zengchao <chao.zeng@siemens.com>
 Date: Wed, 6 Nov 2019 11:21:49 +0800
-Subject: [PATCH 102/119] HACK: setting the RJ45 port led behavior
+Subject: [PATCH] HACK: setting the RJ45 port led behavior
 
 Temporary needed until we have a proper, likely LED-class based
 solution upstream.
@@ -12,10 +12,10 @@ Signed-off-by: zengchao <chao.zeng@siemens.com>
  1 file changed, 7 insertions(+)
 
 diff --git a/drivers/net/phy/dp83867.c b/drivers/net/phy/dp83867.c
-index c716074fdef0..9ee2375782b3 100644
+index 5fabcd15ef77..dcf61ec6eee6 100644
 --- a/drivers/net/phy/dp83867.c
 +++ b/drivers/net/phy/dp83867.c
-@@ -53,6 +53,10 @@
+@@ -54,6 +54,10 @@
  #define DP83867_10M_SGMII_CFG   0x016F
  #define DP83867_10M_SGMII_RATE_ADAPT_MASK BIT(7)
  
@@ -26,7 +26,7 @@ index c716074fdef0..9ee2375782b3 100644
  #define DP83867_SW_RESET	BIT(15)
  #define DP83867_SW_RESTART	BIT(14)
  
-@@ -483,6 +487,9 @@ static int dp83867_verify_rgmii_cfg(struct phy_device *phydev)
+@@ -485,6 +489,9 @@ static int dp83867_verify_rgmii_cfg(struct phy_device *phydev)
  		return -EINVAL;
  	}
  
@@ -36,6 +36,3 @@ index c716074fdef0..9ee2375782b3 100644
  	return 0;
  }
  
--- 
-2.34.1
-

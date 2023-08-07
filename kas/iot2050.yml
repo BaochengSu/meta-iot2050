@@ -1,5 +1,5 @@
 #
-# Copyright (c) Siemens AG, 2019-2022
+# Copyright (c) Siemens AG, 2019-2023
 #
 # Authors:
 #  Le Jin <le.jin@siemens.com>
@@ -27,31 +27,22 @@ repos:
 
   isar:
     url: https://github.com/ilbers/isar
-    refspec: cf3f18a649ff42726677a58b224b9bb58ea4ba46
+    refspec: 9f6b5d92b974158d770a89459962764273995730
     layers:
       meta:
     patches:
-      fix-pseudo:
-        repo: cip-core
-        path: patches/isar/0001-Fix-permissions-when-splitting-rootfs-folders-across.patch
-      expand-with-dm:
-        path: isar-patches/0001-expand-on-first-boot-Add-support-for-devicemapper.patch
-      fix-expand-with-dm:
-        path: isar-patches/0001-expand-on-first-boot-Resolve-errors-in-helper-script.patch
-
-  meta-coral:
-    url: https://github.com/siemens/meta-coral
-    refspec: 3b269218df570b02c213a4840575c0b79b96538a
+      1-optee-client-dep:
+        path: isar-patches/0001-optee-client-Add-missing-runtime-dependency.patch
+      2-unbind-ftpm:
+        path: isar-patches/0002-optee-client-Unbind-ftpm-rather-than-remove-its-driv.patch
+      3-move-sync:
+        path: isar-patches/0003-initramfs-tee-ftpm-supplicant-hook-Move-sync-loop-to.patch
+      4-modprobe-optee:
+        path: isar-patches/0004-initramfs-tee-supplicant-hook-Account-for-modular-op.patch
 
   cip-core:
     url: https://gitlab.com/cip-project/cip-core/isar-cip-core.git
-    refspec: cf5d588527c315b4f16e8b3b3677e62a295b73f2
-
-bblayers_conf_header:
-  standard: |
-    LCONF_VERSION = "6"
-    BBPATH = "${TOPDIR}"
-    BBFILES ?= ""
+    refspec: a6687b6b0430f7dbce5b3d2fd8e9e5ceb5fbbffe
 
 local_conf_header:
   standard: |

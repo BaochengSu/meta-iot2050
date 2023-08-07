@@ -1,5 +1,5 @@
 #
-# Copyright (c) Siemens AG, 2021-2022
+# Copyright (c) Siemens AG, 2021-2023
 #
 # Authors:
 #  Jan Kiszka <jan.kiszka@siemens.com>
@@ -41,10 +41,10 @@ config IMAGE_BOOT_PG1
 	  allows to recover. Otherwise you risk to BRICK THE IOT2050!
 
 config IMAGE_BOOT_PG2
-	bool "Firmware image for PG2 devices"
+	bool "Firmware image for PG2 and M.2 devices"
 	help
 	  Build the firmware image that is responsible for booting Product
-	  Generation 2 (PG2) devices.
+	  Generation 2 (PG2) devices, including its M.2 variant.
 
 	  WARNING: Do not flash this image onto your device unless you know
 	  that it fits AND you have an external flash programmer at hand that
@@ -75,17 +75,16 @@ config KAS_INCLUDE_RT
 	default "kas/opt/preempt-rt.yml"
 	depends on PREEMPT_RT
 
-config CORAL
-	bool "Google Coral Edge TPU support"
-	default y
+config DOCKER
+	bool "Docker support"
+	default n
 	help
-	  Add driver and libraries to use a Google Coral Edge TPU accelerator
-	  card if it is installed in the IOT2050 extension slot.
+	  Building image with docker support.
 
-config KAS_INCLUDE_NO_CORAL
+config KAS_INCLUDE_DOCKER
 	string
-	default "kas/opt/no-coral.yml"
-	depends on !CORAL
+	default "kas/opt/docker.yml"
+	depends on DOCKER
 
 config LXDE
 	bool "LXDE graphical user interface"
@@ -101,8 +100,8 @@ endif
 
 # Provide two entries so that the help text can be adjusted to the image.
 config SECURE_BOOT
-	bool "Secure boot"
-	depends on IMAGE_SWUPDATE
+	bool "Secure boot & Data encryption"
+	depends on IMAGE_SWUPDATE && !IMAGE_QEMU
 	help
 	  Enable signing of boot artifacts (boot loader, unified kernel image).
 	  Furthermore activate dm-verity integrity protection for the read-only
@@ -111,7 +110,11 @@ config SECURE_BOOT
 	  This uses the public custMpk.key and certificate by default. Do not
 	  use this key in production, it is for demonstration purposes only.
 
-	  Note: The persistent /var and /home partitions are not yet protected!
+	  The writable persistent /var and /home partitions are encrypted as
+	  LUKS2 partitions.
+
+	  The reason of coupling the data encryption with the secure boot is to
+	  have a proper integrity chain rooted in hardware (OTP, RPMB, etc.)
 
 config SECURE_BOOT
 	bool "Secure boot"
@@ -125,10 +128,64 @@ config SECURE_BOOT
 	  This uses the public custMpk.key and certificate by default. Do not
 	  use this key in production, it is for demonstration purposes only.
 
+config OTP_PROVISIONING
+	bool "OTP Provisioning"
+	depends on IMAGE_BOOT_PG2
+	help
+	  Integrate OTP provisioning data into the firmware artifacts. Various
+	  options are avaiable. By default, this will integrate the OTP command
+	  data for provision two public key hashes and enable secure boot in
+	  OTP. 
+
+	  WARNING: This uses the dummy keys by default. Do not use these keys
+	  in production, they are for demonstration purposes only.
+
+config RPMB_SETUP
+	bool "OPTEE RPMB setup for OTP key write"
+	depends on IMAGE_BOOT_PG2 && !SECURE_BOOT
+	help
+	   Enable one-time pairing between processor and secure storage
+	   (RPMB on eMMC). Do not sign and distribute this version. Run it
+	   only in a secure environment on the target device, then replace it
+	   with signed production firmware and enable secure boot.
+
+config IMAGE_QEMU
+	bool "QEMU Image"
+	depends on IMAGE_EXAMPLE || IMAGE_SWUPDATE
+	help
+	  QEMU image to boot image without real hardware. The device emulated
+	  by QEMU is not identical to a physical IOT2050. This leads to missing
+	  or limited features such as Arduino I/Os, only one ethernet port,
+	  virtual debug serial port, qemu version of u-boot, no watchdog, only
+	  virtual drives, performance issues etc.
+
+	  WARNING: Please be aware of potential problems when using the image
+	  for testing purposes.
+
+config KAS_INCLUDE_QEMU_IMAGE
+	string
+	default "kas-iot2050-qemu.yml"
+	depends on IMAGE_QEMU
+
 config KAS_INCLUDE_SECURE_BOOT
 	string
 	default "kas/opt/secure-boot.yml"
 	depends on SECURE_BOOT
+
+config KAS_INCLUDE_OTP_PROVISIONING
+	string
+	default "kas/opt/otpcmd/key-provision.yml" if OTP_PROVISIONING_2KEYS_ENABLE
+	default "kas/opt/otpcmd/key-provision-keys-only.yml" if OTP_PROVISIONING_2KEYS
+	default "kas/opt/otpcmd/key-provision-3keys.yml" if OTP_PROVISIONING_3KEYS_ENABLE
+	default "kas/opt/otpcmd/key-provision-enabling-only.yml" if OTP_PROVISIONING_ENABLING_ONLY
+	default "kas/opt/otpcmd/key-switch.yml" if OTP_PROVISIONING_KEY_SWITCHING_1TO2
+	default "kas/opt/otpcmd/key-switch-2to3.yml" if OTP_PROVISIONING_KEY_SWITCHING_2TO3
+	depends on OTP_PROVISIONING
+
+config KAS_INCLUDE_RPMB_SETUP
+	string
+	default "kas/opt/rpmb-setup.yml"
+	depends on RPMB_SETUP
 
 comment "Build options"
 
@@ -166,7 +223,7 @@ config DEBIAN_MIRROR
 
 config DEBIAN_MIRROR_URL
 	string "URL of Debian mirror"
-	default "ftp.de.debian.org"
+	default "http://ftp.de.debian.org"
 	depends on DEBIAN_MIRROR
 
 config KAS_INCLUDE_DEBIAN_MIRROR
@@ -181,3 +238,53 @@ config FIRMWARE_SECURE_VER
 	help
 	  Use specific anti-rollback secure version rather than the default 0.
 	  Range 0 - 127.
+
+choice
+	prompt "*** OTP provisioning command type ***"
+	depends on OTP_PROVISIONING
+	default OTP_PROVISIONING_2KEYS_ENABLE
+
+config OTP_PROVISIONING_2KEYS_ENABLE
+	bool "2 keys & enabling secure boot"
+	help
+	  OTP provisioning command data contains the public key hashes of 
+	  below keys and enabling secure boot:
+	  * recipes-bsp/secure-boot-otp-provisioning/files/keys/custMpk.pem
+	  * recipes-bsp/secure-boot-otp-provisioning/files/keys/custSmpk.pem
+
+
+config OTP_PROVISIONING_2KEYS
+	bool "2 keys only"
+	help
+	  OTP provisioning command data contains the public key hashes of 
+	  below keys but without enabling secure boot:
+	  * recipes-bsp/secure-boot-otp-provisioning/files/keys/custMpk.pem
+	  * recipes-bsp/secure-boot-otp-provisioning/files/keys/custSmpk.pem
+
+config OTP_PROVISIONING_3KEYS_ENABLE
+	bool "3 keys & enabling secure boot"
+	help
+	  OTP provisioning command data contains the public key hashes of 
+	  below keys and enabling secure boot:
+	  * recipes-bsp/secure-boot-otp-provisioning/files/keys/custMpk.pem
+	  * recipes-bsp/secure-boot-otp-provisioning/files/keys/custSmpk.pem
+	  * recipes-bsp/secure-boot-otp-provisioning/files/keys/custBmpk.pem
+
+config OTP_PROVISIONING_ENABLING_ONLY
+	bool "Enabling secure boot only"
+	help
+	  OTP provisioning command data only contains enabling secure boot.
+
+config OTP_PROVISIONING_KEY_SWITCHING_1TO2
+	bool "Key switching from key 1 to key 2"
+	help
+	  OTP provisioning command data contains key switching from key 1
+	  to key 2.
+
+config OTP_PROVISIONING_KEY_SWITCHING_2TO3
+	bool "Key switching from key 2 to key 3"
+	help
+	  OTP provisioning command data contains key switching from key 2
+	  to key 3.
+
+endchoice

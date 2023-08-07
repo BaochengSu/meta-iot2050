@@ -10,7 +10,10 @@ inherit dpkg-raw
 
 DESCRIPTION = "prepare u-boot environment for swupdate"
 
-DEBIAN_DEPENDS = "libubootenv-tool"
+RDEPENDS += "u-boot-${MACHINE}-config"
+DEBIAN_DEPENDS = "libubootenv-tool, u-boot-${MACHINE}-config"
+
+DPKG_ARCH = "all"
 
 SRC_URI += "file://postinst \
             file://patch-u-boot-env.config \

@@ -1,5 +1,5 @@
 #
-# Copyright (c) Siemens AG, 2021
+# Copyright (c) Siemens AG, 2021-2023
 #
 # Authors:
 #  Quirin Gylstorff <quirin.gylstorff@siemens.com>
@@ -10,6 +10,8 @@ inherit dpkg-raw
 DESCRIPTION = "Add script to confirm update"
 
 SRC_URI = "file://complete_update.sh"
+
+DEBIAN_DEPENDS = "efibootguard"
 
 do_install() {
     # add board status led service

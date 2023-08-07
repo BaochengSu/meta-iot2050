@@ -1,17 +1,19 @@
-# Copyright (c) Siemens AG, 2018-2019
+# Copyright (c) Siemens AG, 2018-2023
 #
 # SPDX-License-Identifier: MIT
 
 # HOWTO generate an npm-shrinkwrap.json:
-#   npm config set global-style=true (you may want to reset this afterward)
-#   npm install <my-favorite-package>
-#   cp package-lock.json /path/to/recipe/files/npm-shrinkwrap.json
+#  - use target Debian version as environment
+#  - npm install --install-strategy=shallow <my-favorite-package>
+#  - cp package-lock.json /path/to/recipe/files/npm-shrinkwrap.json
 
 inherit dpkg-raw
+inherit buildchroot
 
 NPMPN ?= "${PN}"
 NPM_SHRINKWRAP ?= "file://npm-shrinkwrap.json"
-NPM_LOCAL_INSTALL_DIR ?= ""
+NPM_LOCAL_INSTALL_DIR ??= ""
+NPM_INSTALL_FLAGS ?= ""
 
 NPM_REBUILD ?= "1"
 
@@ -33,8 +35,9 @@ NPM_ARCH ?= "${@npm_arch_map(d.getVar('DISTRO_ARCH'), d)}"
 NPM_CLASS_PACKAGE ?= "npm"
 OWN_NPM_CLASS_PACKAGE ?= "0"
 
-# needed as gyp from bullseye does not establish /usr/bin/python
-NPM_EXTRA_DEPS = "${@'python' if d.getVar('NPM_REBUILD') == '1' else ''}"
+DEBIAN_BUILD_DEPENDS =. "${@'python3, libnode108,' if d.getVar('NPM_REBUILD') == '1' else ''}"
+DEBIAN_BUILD_DEPENDS =. "${NPM_CLASS_PACKAGE},"
+DEBIAN_DEPENDS =. "\${shlibs:Depends}, \${misc:Depends},"
 
 python() {
     src_uri = (d.getVar('SRC_URI', True) or "").split()
@@ -67,6 +70,30 @@ python() {
     d.setVar('NPM_MAPPED_NAME', mapped_name)
 }
 
+BUILDROOT = "${BUILDCHROOT_DIR}/${PP}"
+
+npm_fetch_do_mounts() {
+    mkdir -p ${BUILDROOT}
+    sudo mount --bind ${WORKDIR} ${BUILDROOT}
+
+    buildchroot_do_mounts
+}
+
+npm_fetch_undo_mounts() {
+    i=0
+    while ! sudo umount ${BUILDROOT}; do
+        sleep 0.1
+        if [ `expr $i % 100` -eq 0 ] ; then
+            bbwarn "${BUILDROOT}: Couldn't unmount ($i), retrying..."
+        fi
+        if [ $i -ge 10000 ]; then
+            bbfatal "${BUILDROOT}: Couldn't unmount after timeout"
+        fi
+        i=`expr $i + 1`
+    done
+    sudo rmdir ${BUILDROOT}
+}
+
 def get_npm_bundled_tgz(d):
     return "{0}-{1}-bundled.tgz".format(d.getVar('NPM_MAPPED_NAME'),
                                         d.getVar('PV'))
@@ -87,34 +114,46 @@ def runcmd(d, cmd, dir):
             cmd, (":\n" + output) if output else ""))
     bb.note(output)
 
+def apply_mirrors_in_shrinkwrap(path, pattern, subst):
+    import json, re
+    with open(path, 'r') as f:
+        data = json.load(f)
+    for pname, pdef in data['packages'].items():
+        if 'resolved' in pdef:
+            pdef['resolved'] = re.sub(pattern, subst, pdef['resolved'])
+    with open(path, 'w') as f:
+        json.dump(data, f, indent=2)
+
 do_install_npm() {
     install_cmd="sudo -E chroot ${BUILDCHROOT_DIR} \
         apt-get install -y -o Debug::pkgProblemResolver=yes \
                 --no-install-recommends"
 
-    dpkg_do_mounts
+    npm_fetch_do_mounts
 
     E="${@ bb.utils.export_proxies(d)}"
-    deb_dl_dir_import "${BUILDCHROOT_DIR}"
+    deb_dl_dir_import "${BUILDCHROOT_DIR}" ${BASE_DISTRO}-${BASE_DISTRO_CODENAME}
     sudo -E chroot ${BUILDCHROOT_DIR} \
             apt-get update \
                     -o Dir::Etc::sourcelist="sources.list.d/isar-apt.list" \
                     -o Dir::Etc::sourceparts="-" \
                     -o APT::Get::List-Cleanup="0"
-    ${install_cmd} --download-only ${NPM_CLASS_PACKAGE} ${NPM_EXTRA_DEPS}
-    deb_dl_dir_export "${BUILDCHROOT_DIR}"
-    ${install_cmd} ${NPM_CLASS_PACKAGE} ${NPM_EXTRA_DEPS}
+    ${install_cmd} --download-only ${NPM_CLASS_PACKAGE}
+    deb_dl_dir_export "${BUILDCHROOT_DIR}" ${BASE_DISTRO}-${BASE_DISTRO_CODENAME}
+    ${install_cmd} ${NPM_CLASS_PACKAGE}
 
-    dpkg_undo_mounts
+    npm_fetch_undo_mounts
 }
+do_install_npm[depends] += "${BUILDCHROOT_DEP}"
 do_install_npm[depends] += "${@d.getVarFlag('do_apt_fetch', 'depends')}"
 do_install_npm[depends] += "${@(d.getVar('NPM_CLASS_PACKAGE') + ':do_deploy_deb') if d.getVar('OWN_NPM_CLASS_PACKAGE') == '1' else ''}"
 do_install_npm[lockfiles] += "${REPO_ISAR_DIR}/isar.lock"
+do_install_npm[network] += "${TASK_USE_SUDO}"
 
 addtask install_npm before do_fetch
 
 python fetch_npm() {
-    import json, os, shutil
+    import json, os, shutil, re
 
     workdir = d.getVar('WORKDIR');
     tmpdir = workdir + "/fetch-tmp"
@@ -143,7 +182,7 @@ python fetch_npm() {
         if hash == fetch_hash:
             return
 
-    bb.build.exec_func("dpkg_do_mounts", d)
+    bb.build.exec_func("npm_fetch_do_mounts", d)
     bb.utils.export_proxies(d)
 
     old_cwd = os.getcwd()
@@ -155,7 +194,16 @@ python fetch_npm() {
     # be created in this directory
     os.environ['HOME'] = d.getVar('PP') + "/fetch-tmp"
 
-    os.environ.update({'npm_config_registry': d.getVar('NPM_REGISTRY')})
+    # apply simplified PREMIRRORS logic to NPM_REGISTRY and shrinkwrap
+    npm_registry = d.getVar('NPM_REGISTRY', True)
+    mirrors = bb.fetch2.mirror_from_string(d.getVar('PREMIRRORS'))
+    npm_mirrors = filter(lambda m: m[0].startswith('npm://'), mirrors)
+    for m in npm_mirrors:
+        pattern = m[0].replace('npm://','')
+        subst = m[1].replace('npm://','')
+        npm_registry = re.sub(pattern, subst, npm_registry)
+        apply_mirrors_in_shrinkwrap('npm-shrinkwrap.json', pattern, subst)
+    os.environ.update({'npm_config_registry': npm_registry})
 
     npmpn = d.getVar('NPMPN')
 
@@ -186,7 +234,7 @@ python fetch_npm() {
         hash_file.write(fetch_hash)
 
     os.chdir(old_cwd)
-    bb.build.exec_func("dpkg_undo_mounts", d)
+    bb.build.exec_func("npm_fetch_undo_mounts", d)
 }
 do_fetch[postfuncs] += "fetch_npm"
 do_fetch[cleandirs] += "${WORKDIR}/fetch-tmp"
@@ -205,25 +253,23 @@ python clean_npm() {
 do_cleanall[postfuncs] += "clean_npm"
 
 do_install() {
-    dpkg_do_mounts
-
-    # changing the home directory to the working directory, the .npmrc will
-    # be created in this directory
-    export HOME=${PP}
-
-    # ensure empty cache
-    export npm_config_cache=${PP}/npm_cache
-    sudo rm -rf ${WORKDIR}/npm_cache
-
-    INSTALL_FLAGS="--offline --only=production --no-package-lock --verbose \
-                   --arch=${NPM_ARCH} --target_arch=${NPM_ARCH}"
-
+    # create directories to be installed
     if [ -n "${NPM_LOCAL_INSTALL_DIR}" ]; then
         mkdir -p ${D}/${NPM_LOCAL_INSTALL_DIR}
+    else
+        mkdir -p ${D}/usr/lib
+    fi
+}
+
+do_prepare_build:append() {
+    INSTALL_FLAGS="--offline --only=production --no-package-lock --verbose \
+                   --arch=${NPM_ARCH} --target_arch=${NPM_ARCH} \
+                   --no-audit"
+
+    if [ -n "${NPM_LOCAL_INSTALL_DIR}" ]; then
         CHDIR=${PP}/image/${NPM_LOCAL_INSTALL_DIR}
     else
         CHDIR=/
-        mkdir -p ${D}/usr/lib
         INSTALL_FLAGS="$INSTALL_FLAGS --prefix ${PP}/image/usr -g"
     fi
 
@@ -231,24 +277,22 @@ do_install() {
         INSTALL_FLAGS="$INSTALL_FLAGS --build-from-source --no-save"
     fi
 
-    export CHDIR INSTALL_FLAGS
-    sudo -E chroot --userspec=$(id -u):$(id -g) ${BUILDCHROOT_DIR} sh -c ' \
-        cd $CHDIR
-        npm install $INSTALL_FLAGS /downloads/${@get_npm_bundled_tgz(d)}
-    '
-
-    # this is left behind by npm, despite --no-package-lock and --no-save
-    if [ -n "${NPM_LOCAL_INSTALL_DIR}" ]; then
-        rm -f ${D}/${NPM_LOCAL_INSTALL_DIR}/node_modules/.package-lock.json
-    fi
-
-    dpkg_undo_mounts
-}
-
-do_prepare_build_append() {
-    # disable slow stripping - not enough value for our ad-hoc npm packaging
     cat <<EOF >> ${S}/debian/rules
 
+export HOME=${PP}
+export npm_config_cache=${PP}/npm_cache
+
+override_dh_clean:
+	rm -rf ${CHDIR}/node_modules
+	rm -rf $(npm_config_cache)
+
+override_dh_auto_build:
+	cd ${CHDIR} && npm install ${INSTALL_FLAGS} ${NPM_INSTALL_FLAGS} /downloads/${@get_npm_bundled_tgz(d)}
+	if [ -n "${NPM_LOCAL_INSTALL_DIR}" ]; then \
+	    rm -f ${CHDIR}/node_modules/.package-lock.json; \
+	fi
+
+# disable slow stripping - not enough value for our ad-hoc npm packaging
 override_dh_strip_nondeterminism:
 EOF
 }

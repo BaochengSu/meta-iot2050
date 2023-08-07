@@ -1,8 +1,7 @@
-From 50f6479b037d735c9d206a1f919e9b6c1ea3b68d Mon Sep 17 00:00:00 2001
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Vignesh Raghavendra <vigneshr@ti.com>
 Date: Tue, 18 May 2021 23:37:24 +0300
-Subject: [PATCH 087/119] net: ethernet: ti: icssg_prueth: add 10M full duplex
- support
+Subject: [PATCH] net: ethernet: ti: icssg_prueth: add 10M full duplex support
 
 For 10M support RGMII need to be configured in inband mode and FW has to be
 notified about current link speed in PORT_LINK_SPEED MMR.
@@ -249,6 +248,3 @@ index bf52d350bdd0..644a22b53424 100644
  /*TAS gate mask for windows list0*/
  #define TAS_GATE_MASK_LIST0                                0x0100
  /*TAS gate mask for windows list1*/
--- 
-2.34.1
-

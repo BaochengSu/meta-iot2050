@@ -1,5 +1,5 @@
 #
-# Copyright (c) Siemens AG, 2021-2022
+# Copyright (c) Siemens AG, 2021-2023
 #
 # Authors:
 #  Quirin Gylstorff <quirin.gylstorff@siemens.com>
@@ -8,36 +8,39 @@
 # COPYING.MIT file in the top-level directory.
 #
 
-IMAGE_UUID = "image_uuid"
-IMAGE_UUID_secureboot = ""
-
-inherit ${IMAGE_UUID}
-
-# generate a swu image for a/b updating via swupdate
-IMAGE_FSTYPES = "wic-swu-img"
-IMAGE_FSTYPES_secureboot = "secure-wic-swu-img"
-
-require recipes-core/images/swupdate.inc
 require recipes-core/images/iot2050-image-example.bb
+require recipes-core/images/efibootguard.inc
+require recipes-core/images/swupdate.inc
+
+inherit image_uuid
+
+IMAGE_TYPEDEP:wic += "squashfs"
+IMAGE_TYPEDEP:wic:secureboot += "verity"
 
 WKS_FILE = "iot2050-swu.wks.in"
-WKS_FILE_secureboot = "iot2050-swu-secure.wks.in"
+WKS_FILE:secureboot = "iot2050-swu-secure.wks.in"
 
-WIC_IMAGER_INSTALL += "efibootguard"
+IMAGE_FSTYPES += "swu"
+SWU_ROOTFS_TYPE:secureboot = "verity"
+
 # watchdog is managed by U-Boot - disable
 WDOG_TIMEOUT = "0"
-WICVARS += "WDOG_TIMEOUT KERNEL_IMAGE INITRD_IMAGE DTB_FILES"
+
+INITRD_DEPLOY_FILE = "${INITRAMFS_RECIPE}-${DISTRO}-${MACHINE}.initrd.img"
 
 # not compatible with SWUpdate images
-IMAGE_INSTALL_remove = "regen-rootfs-uuid"
-IMAGE_INSTALL_remove = "install-on-emmc"
-IMAGE_INSTALL_remove = "node-red-preinstalled-nodes"
+IMAGE_INSTALL:remove = "regen-rootfs-uuid"
+IMAGE_INSTALL:remove = "install-on-emmc"
+
+# not compatible with disk encryption
+IMAGE_INSTALL:remove:secureboot = "expand-on-first-boot"
 
 # EFI Boot Guard is used instead
-IMAGE_INSTALL_remove = "u-boot-script"
+IMAGE_INSTALL:remove = "u-boot-script"
 
-IMAGE_INSTALL += "efibootguard"
-IMAGE_INSTALL += "swupdate"
+IMAGE_INSTALL += "customizations-swupdate"
 IMAGE_INSTALL += "swupdate-handler-roundrobin"
 IMAGE_INSTALL += "swupdate-complete-update-helper"
-IMAGE_INSTALL += "iot2050-watchdog"
+IMAGE_INSTALL += "${@ 'iot2050-watchdog' if d.getVar('QEMU_IMAGE') != '1' else '' }"
+
+IMAGE_INSTALL:append:secureboot = " iot2050-efivarfs-helper"
