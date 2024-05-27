@@ -58,6 +58,7 @@ IOT2050_DEBIAN_DEBUG_PACKAGES = " \
     systemd-timesyncd \
     efitools \
     mmc-utils \
+    tpm2-tools \
     "
 
 # wifi support

@@ -30,6 +30,9 @@ repos:
     commit: 9dc362cd7115074c0f60843e687ed89db5c9339a
     layers:
       meta:
+    patches:
+      01-tpm-test:
+        path: isar-patches/0001-tpm-test.patch
 
   cip-core:
     url: https://gitlab.com/cip-project/cip-core/isar-cip-core.git

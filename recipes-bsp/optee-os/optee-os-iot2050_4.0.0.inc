@@ -35,3 +35,7 @@ OPTEE_EXTRA_BUILDARGS:append:rpmb-setup = " \
 OPTEE_EXTRA_BUILDARGS:append:secureboot = " \
     ${OPTEE_COMMON_RPMB_CFG} \
     "
+
+OPTEE_EXTRA_BUILDARGS:append:tpmtest = " \
+    ${OPTEE_COMMON_RPMB_CFG} \
+    "

@@ -25,6 +25,8 @@ SRC_URI:append:otpcmd = " \
     file://otpcmd.cfg"
 SRC_URI:append:rpmb-setup = " \
     file://rpmb-setup.cfg"
+SRC_URI:append:tpmtest = " \
+    file://tpm-test.cfg"
 
 U_BOOT_BIN = "flash.bin"
 U_BOOT_ENV = "u-boot-initial-env"
@@ -64,6 +66,11 @@ do_prepare_build:append:secureboot() {
     ln -f ${WORKDIR}/keys/* ${S}/keys/
     sed -ni '/### Secure boot config/q;p' ${S}/configs/${U_BOOT_CONFIG}
     cat ${WORKDIR}/secure-boot.cfg >> ${S}/configs/${U_BOOT_CONFIG}
+}
+
+do_prepare_build:append:tpmtest() {
+    sed -ni '/### TPM test config/q;p' ${S}/configs/${U_BOOT_CONFIG}
+    cat ${WORKDIR}/tpm-test.cfg >> ${S}/configs/${U_BOOT_CONFIG}
 }
 
 dpkg_runbuild:append:secureboot() {

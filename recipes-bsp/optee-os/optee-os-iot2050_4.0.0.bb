@@ -29,6 +29,14 @@ OPTEE_EXTRA_BUILDARGS:append:secureboot = " \
     EARLY_TA_PATHS=/usr/lib/optee-os/${OPTEE_NAME}/ta/${FTPM_UUID}.stripped.elf \
     "
 
+DEPENDS:append:tpmtest = " optee-ftpm-${OPTEE_NAME}"
+DEBIAN_BUILD_DEPENDS:append:tpmtest = ", optee-ftpm-${OPTEE_NAME}"
+FTPM_UUID = "bc50d971-d4c9-42c4-82cb-343fb7f37896"
+OPTEE_EXTRA_BUILDARGS:append:tpmtest = " \
+    CFG_EARLY_TA=y \
+    EARLY_TA_PATHS=/usr/lib/optee-os/${OPTEE_NAME}/ta/${FTPM_UUID}.stripped.elf \
+    "
+
 # RPMB key pairing
 OPTEE_EXTRA_BUILDARGS:append:rpmb-setup = " CFG_RPMB_WRITE_KEY=y"
 

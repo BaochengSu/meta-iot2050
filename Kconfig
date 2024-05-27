@@ -154,6 +154,12 @@ config SECURE_BOOT
 	  NOTE: Only PG2 and M.2 devices are officially supported regarding
 	  secure boot.
 
+config TPM_TEST
+	bool "TPM Test Image"
+	depends on IMAGE_BOOT && !SECURE_BOOT
+	help
+	  TPM test image
+
 config OTP_PROVISIONING
 	bool "OTP Provisioning"
 	depends on IMAGE_BOOT
@@ -212,6 +218,11 @@ config KAS_INCLUDE_RPMB_SETUP
 	string
 	default "kas/opt/rpmb-setup.yml"
 	depends on RPMB_SETUP
+
+config KAS_INCLUDE_TPM_TEST
+	string
+	default "kas/opt/tpm-test.yml"
+	depends on TPM_TEST
 
 comment "Build options"
 

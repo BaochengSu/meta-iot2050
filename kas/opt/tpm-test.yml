@@ -1,0 +1,14 @@
+#
+# Copyright (c) Siemens AG, 2022
+#
+# This file is subject to the terms and conditions of the MIT License.  See
+# COPYING.MIT file in the top-level directory.
+#
+
+header:
+  version: 14
+
+local_conf_header:
+  secureboot_override: |
+    OVERRIDES .= ":uefi-stmm"
+    OVERRIDES .= ":tpmtest"

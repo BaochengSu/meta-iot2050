@@ -1,0 +1,34 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Baocheng Su <baocheng.su@siemens.com>
+Date: Mon, 27 May 2024 09:48:28 +0800
+Subject: [PATCH] tpm test
+
+Signed-off-by: Baocheng Su <baocheng.su@siemens.com>
+---
+ meta/recipes-bsp/u-boot-script/files/update-u-boot-script | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/meta/recipes-bsp/u-boot-script/files/update-u-boot-script b/meta/recipes-bsp/u-boot-script/files/update-u-boot-script
+index 2eb6097c7d6e..88b4a381cf50 100755
+--- a/meta/recipes-bsp/u-boot-script/files/update-u-boot-script
++++ b/meta/recipes-bsp/u-boot-script/files/update-u-boot-script
+@@ -29,6 +29,9 @@ case $(uname -m) in
+ 		;;
+ esac
+ 
++# TPM-TEST: EFI boot
++BOOT="bootefi"
++
+ echo "${SCRIPT_PREPEND}" >> ${BOOT_CMD}
+ 
+ echo "setenv bootargs ${KERNEL_ARGS}" >> ${BOOT_CMD}
+@@ -62,6 +65,9 @@ yes|1)
+ 	INITRD_ADDR="\${ramdisk_addr_r}:\${ramdisk_size}"
+ esac
+ 
++# TPM-TEST: bootefi would accept the initrd parameter
++INITRD_ADDR=""
++
+ if [ -n "${OVERLAYS}" ]; then
+ 	echo "fdt addr \${fdt_addr_r}" >> ${BOOT_CMD}
+ 	# grant 1 MB to combined device tree
